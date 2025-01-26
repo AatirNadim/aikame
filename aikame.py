@@ -1,7 +1,7 @@
 from utils.index import call_func, hello
 import click
 import os
-from utils.load_files import load_files, show_files, clear_context, remove_file
+from utils.crud_files import load_files, show_files, clear_context, remove_file
 
 @click.group()
 @click.pass_context
