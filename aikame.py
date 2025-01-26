@@ -1,11 +1,14 @@
-from utils.index import call_func, hello_world
+from utils.index import call_func, hello
 import click
+from utils.load_files import load_files
 
 @click.group()
-def cli() -> None :
-	print("this is the entrypoint of the application", call_func(1, 2))
+@click.pass_context
+def cli(ctx: click.Context) -> None :
+	pass
 
-cli.add_command(hello_world)
+cli.add_command(hello)
+cli.add_command(load_files)
 
 if __name__ == "__main__":
 	cli()

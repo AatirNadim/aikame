@@ -7,5 +7,5 @@ def call_func(a: int, b: int) -> int:
 
 @click.command()
 @click.argument("name", type=str)
-def hello_world(name: str) -> str:
+def hello(name: str) -> str:
 	click.echo(f"Hello, {name}!")
