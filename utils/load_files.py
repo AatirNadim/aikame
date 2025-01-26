@@ -1,6 +1,7 @@
 import click
 import os
 import PyPDF2
+import json
 
 class RelativePathError(Exception):
 	pass
@@ -22,18 +23,18 @@ files_added = []
 
 def parse_and_extract_text(file_path: str) -> None:
 	pdf_file = open(file_path, "rb")
-	pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+	pdf_reader = PyPDF2.PdfReader(pdf_file)
 	text = ""
-	for page_num in range(pdf_reader.numPages):
-		page = pdf_reader.getPage(page_num)
-		text += page.extractText()
+	for page in pdf_reader.pages:
+		# page = pdf_reader.getPage(page_num)
+		text += page.extract_text()
 	pdf_file.close()
 	return text
 
 def load_util(file_path: str) -> str:
 	try:
 		if not os.path.isabs(file_path):
-			raise RelativePathError(f"Please provide an absolute path: {file_path}")
+			file_path = os.path.abspath(file_path)
 
 		if file_path.split(".")[-1] not in acceptable_file_types:
 			raise ValueError(f"Unsupported file type: {file_path.split('.')[-1]}")
@@ -69,16 +70,24 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
 		except (RelativePathError, ValueError, IsADirectoryError, PermissionError, IOError, FileNotFoundError) as e:
 			click.secho(e, fg="red")
 			return None
-	ctx.obj["files"] = res
+
+
+	if not os.listdir("assets"):
+		os.mkdir("assets")
+	with open("assets/.json", "w+") as file:
+		json.dump(res, file)
+	click.secho(f"Files loaded: {files_added}", fg="green")
 	return res
 
 
 @click.command()
-def show_files() -> None:
+@click.pass_context
+def show_files(ctx: click.Context) -> None:
 	"""
 	Show the files that have been loaded.
 	"""
-	if not files_added:
+	click.echo(f"env : {os.getenv('files', 'this is not working')}")
+	if not "files" in os.environ or os.environ["files"] == {}:
 		click.secho("No files have been loaded yet.", fg="red")
 	else:
 		click.secho("Files loaded:", fg="green")
