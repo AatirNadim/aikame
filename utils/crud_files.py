@@ -8,6 +8,7 @@ from .index import timing_decorator, get_embeddings_path_from_key
 from .constants import parent_path, chunk_size
 import shutil
 import fileinput
+from uuid import uuid4 as uuid
 
 class RelativePathError(Exception):
 	pass
@@ -86,7 +87,7 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
 		try:
 			click.echo(f"Loading file: {file_path}")
 			chunks = create_chunks(load_util(file_path), chunk_size=chunk_size)
-			embeddings_wrapper(chunks, file_path, f"{datetime.now().__str__().replace(' ', ':')}.index")
+			embeddings_wrapper(chunks, file_path, f"{uuid()}.index")
 			files_added += 1
 		except (RelativePathError, ValueError, IsADirectoryError, PermissionError, IOError, FileNotFoundError) as e:
 			click.secho(e, fg="red")
@@ -144,9 +145,11 @@ def remove_file(ctx: click.Context, file_path: str) -> None:
 	click.secho(f"Removing file: {file_path}", fg="yellow")
 	try:
 		embeddings_path = get_embeddings_path_from_key(file_path)
+		click.echo(f"Embeddings path: {embeddings_path}")
 		if not os.path.exists(embeddings_path):
 			raise FileNotFoundError(f"File not found: {file_path}")
-		os.remove(embeddings_path)
+		click.echo(f"Removing embeddings file: {embeddings_path}, in parent path: {parent_path}")
+		os.remove(os.path.join(parent_path, embeddings_path))
 		click.secho(f"File with path: {file_path}, has been removed.", fg="yellow")
 		ledger_path = os.path.join(parent_path, "central_ledger.txt")
 		with fileinput.input(ledger_path, inplace=True) as file:

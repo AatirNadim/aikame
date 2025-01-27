@@ -3,10 +3,7 @@ import os
 import click
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from .constants import parent_path
-
-
-model_label = 'all-MiniLM-L6-v2'
+from .constants import parent_path, model_label, chunk_size
 
 
 model = SentenceTransformer(model_label)
@@ -33,7 +30,7 @@ def update_central_ledger(key, path_of_embedding):
 				f.write(f'{key} : {path_of_embedding}\n')
 			return
 		with open(central_ledger, 'a') as f:
-			f.write(f'{key} {path_of_embedding}\n')
+			f.write(f'{key} : {path_of_embedding}\n')
 	except Exception as e:
 		raise Exception(f"Error updating central ledger: {e}")
 
@@ -47,7 +44,7 @@ def store_embeddings(embeddings, path_of_embedding: str) -> tuple:
 		index.add(np.array(embeddings, dtype=np.float32))
 
 		path_of_embedding = os.path.join(parent_path, path_of_embedding)
-		
+
 		if not os.path.exists(path_of_embedding):
 			click.secho(f'Creating file at {path_of_embedding}', fg='green')
 			with open(path_of_embedding, 'w') as f:
@@ -62,9 +59,10 @@ def store_embeddings(embeddings, path_of_embedding: str) -> tuple:
 def create_embedding(texts: list[str]):
 	try:
 		click.secho(f'Creating embeddings for {len(texts)} texts', fg='green')
-		embeddings = model.encode(texts, show_progress_bar=True)
+		embeddings = model.encode(texts, show_progress_bar=True, batch_size=chunk_size)
 		click.secho(f'Embeddings created for {len(texts)} texts', fg='green')
-		click.secho(f'Embedding size: {embeddings.shape}', fg='green')
+		click.secho(f'Embedding shape: {embeddings.shape}', fg='green')
+		click.secho(f'Embedding size: {embeddings}', fg='green')
 		return embeddings
 	except Exception as e:
 		raise Exception(f"Error creating embeddings: {e}")
