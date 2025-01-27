@@ -1,14 +1,28 @@
 import click
-from .crud_files import parent_path
+from .constants import parent_path
+from functools import wraps
+import time
 
 def call_func(a: int, b: int) -> int:
 	return a + b
 
+def timing_decorator(f):
+	@wraps(f)
+	def wrapper(*args, **kwargs):
+		start = time.perf_counter()
+		result = f(*args, **kwargs)
+		end = time.perf_counter()
+		click.secho(f"{f.__name__} took {end - start:.2f} seconds", fg="yellow")
+		return result
+	return wrapper
 
 
 @click.command()
 @click.argument("name", type=str)
 def hello(name: str) -> str:
+	"""
+	A simple health check.
+	"""
 	click.echo(f"Hello, {name}!")
 
 
