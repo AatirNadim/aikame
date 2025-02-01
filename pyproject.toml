@@ -6,14 +6,17 @@ authors = [
 	{name = "AatirNadim",email = "aatir.nadim@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4.0"
 dependencies = [
 	"click (>=8.1.8,<9.0.0)",
 	"pypdf2 (>=3.0.1,<4.0.0)",
 	"faiss-cpu (>=1.9.0.post1,<2.0.0)",
-	"numpy (>=2.2.2,<3.0.0)",
+	"numpy (>=1.22.4,<2)",
 	"sentence-transformers (>=3.4.0,<4.0.0)",
-	"openai (>=1.60.1,<2.0.0)"
+	"openai (>=1.60.1,<2.0.0)",
+	"langchain (>=0.3.17,<0.4.0)",
+	"langgraph (>=0.2.69,<0.3.0)",
+	"chromadb (>=0.6.3,<0.7.0)"
 ]
 
 

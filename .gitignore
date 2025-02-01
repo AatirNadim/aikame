@@ -4,3 +4,4 @@ isolated
 # include any static assets and the parent directory for the dump here, when developing
 /data
 /dump
+*temp*

@@ -5,10 +5,13 @@ import json
 from datetime import datetime
 from .embeddings import embeddings_wrapper
 from .index import timing_decorator, get_embeddings_path_from_key
-from .constants import parent_path, chunk_size
+from .constants import Constants
 import shutil
 import fileinput
 from uuid import uuid4 as uuid
+from pathlib import Path
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import TextLoader, PyPDFLoader
 
 class RelativePathError(Exception):
 	pass
@@ -22,6 +25,77 @@ Structure of central ledger:
 
 
 acceptable_file_types = ["txt", "pdf"]
+
+def _init_directories(self):
+	"""Initialize necessary directories and files."""
+
+	Constants.parent_path.mkdir(exist_ok=True)
+	Constants.docs_dir.mkdir(exist_ok=True)
+
+	if not Constants.metadata_file.exists():
+		_save_metadata({})
+
+def _save_metadata(self, metadata: dict):
+	"""Save metadata to file."""
+	with open(Constants.metadata_file, 'w') as f:
+			json.dump(metadata, f)
+
+def _load_metadata(self) -> dict:
+	"""Load metadata from file."""
+	if Constants.metadata_file.exists():
+			with open(Constants.metadata_file, 'r') as f:
+					return json.load(f)
+	return {}
+
+def _process_document(self, file_path: Path):
+	"""Process a document and return chunks."""
+	if file_path.suffix.lower() == '.pdf':
+		loader = PyPDFLoader(str(file_path))
+	else:
+		loader = TextLoader(str(file_path))
+	documents = loader.load()
+	text_splitter = RecursiveCharacterTextSplitter(
+		chunk_size=Constants.chunk_size,
+		chunk_overlap=Constants.overlap
+	)
+	return text_splitter.split_documents(documents)
+
+def add_document(self, file_path: Path):
+	"""Add a document to the system."""
+	try:
+		# Process document into chunks
+		chunks = self._process_document(file_path)
+
+		# Generate embeddings and add to ChromaDB
+		texts = [chunk.page_content for chunk in chunks]
+		embeddings = self.embedding_model.encode(texts).tolist()
+
+		# Generate IDs for chunks
+		doc_id = str(file_path.stem)
+		ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
+
+		# Add to ChromaDB
+		self.collection.add(
+				embeddings=embeddings,
+				documents=texts,
+				ids=ids,
+				metadatas=[{"source": str(file_path)} for _ in chunks]
+		)
+
+		# Update metadata
+		metadata = self._load_metadata()
+		metadata[str(file_path)] = {
+				"chunks": len(chunks),
+				"ids": ids
+		}
+		self._save_metadata(metadata)
+
+	except Exception as e:
+		raise DocumentProcessingError(f"Error processing document {file_path}: {str(e)}")
+
+
+
+# textSplitter = RecursiveCharacterTextSplitter(chunk_size=Constants.chunk_size, overlap=Constants.overlap)
 
 
 
@@ -86,7 +160,7 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
 	for file_path in file_paths:
 		try:
 			click.echo(f"Loading file: {file_path}")
-			chunks = create_chunks(load_util(file_path), chunk_size=chunk_size)
+			chunks = textSplitter.split_documents(load_util(file_path), chunk_size=chunk_size)
 			embeddings_wrapper(chunks, file_path, f"{uuid()}.index")
 			files_added += 1
 		except (RelativePathError, ValueError, IsADirectoryError, PermissionError, IOError, FileNotFoundError) as e:

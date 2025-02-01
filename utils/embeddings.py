@@ -4,9 +4,10 @@ import click
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from .constants import parent_path, model_label, chunk_size
+from langchain.vectorstores import chroma
 
 
-model = SentenceTransformer(model_label)
+model = SentenceTransformer(model_name_or_path=model_label)
 
 
 def create_parent_directory():
@@ -68,9 +69,24 @@ def create_embedding(texts: list[str]):
 		raise Exception(f"Error creating embeddings: {e}")
 
 
+def create_and_store_embeddings(chunks: list[str], key):
+	try:
+		# Store embeddings in ChromaDB (persistent storage)
+		vector_db = chroma.Chroma.from_documents(
+    	documents=chunks,
+    	embedding=model,
+    	persist_directory="./chroma_db"
+		)
+		vector_db.persist()
+	except Exception as e:
+		click.secho(f"Error in embedding the given chunks: \n{e}", fg='red')
+		raise e
+
+
 def embeddings_wrapper(texts: list[str], key, path_of_embedding: str):
 	try:
-		embeddings = create_embedding(texts)
+		# embeddings = create_embedding(texts)
+		
 		create_parent_directory()
 		store_embeddings(embeddings, path_of_embedding)
 		update_central_ledger(key, path_of_embedding)
