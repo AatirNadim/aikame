@@ -9,7 +9,6 @@ from .constants import Constants
 from .exceptions import *
 import shutil
 import fileinput
-from .rag import embedding_model
 from uuid import uuid4 as uuid
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -17,22 +16,14 @@ from langchain_community.document_loaders.text import TextLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
 
 
-'''
-Structure of central ledger:
-{
-        <file_path>: <embeddings_path>
-}
-'''
-
-
-acceptable_file_types = ["txt", "pdf"]
+acceptable_file_types = [".txt", ".pdf"]
 
 
 class DocumentStore:
 
   def __init__(self):
     self._init_directories()
-    self.embedding_model = embedding_model
+    self.embedding_model = Constants.embedding_model
 
   def _init_directories(self):
     """Initialize necessary directories and files."""
@@ -56,6 +47,8 @@ class DocumentStore:
 
   def _process_document(self, file_path: Path):
     """Process a document and return chunks."""
+    if file_path.suffix.lower() not in acceptable_file_types:
+      raise ValueError(f"Unsupported file type: {file_path.suffix.lower()}")
     if file_path.suffix.lower() == '.pdf':
       loader = PyPDFLoader(str(file_path))
     else:
@@ -83,6 +76,8 @@ class DocumentStore:
       # Generate IDs for chunks
       doc_id = str(file_path.stem)
       ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
+
+      click.secho(f"IDs generated for chunks: \n{ids}\n", fg="green")
 
       # Add to ChromaDB
       Constants.collection.add(
@@ -113,20 +108,19 @@ class DocumentStore:
   def delete_document(self, file_path: Path):
     """Delete a specific document."""
     metadata = self._load_metadata()
-    if str(file_path) in metadata:
-      # Delete from ChromaDB
-      for chunk_id in metadata[str(file_path)]["ids"]:
-        Constants.collection.delete(ids=[chunk_id])
-      click.secho(f"Document with path: {file_path}, has been removed.", fg="green")
+    if str(file_path) not in metadata:
+      raise FileNotFoundError(f"Document with path: {file_path}, not found.")
+    for chunk_id in metadata[str(file_path)]["ids"]:
+      Constants.collection.delete(ids=[chunk_id])
+    click.secho(f"Document with path: {file_path}, has been removed.", fg="green")
 
-      # Update metadata
-      del metadata[str(file_path)]
-      self._save_metadata(metadata)
-      click.secho(f"Metadata for document with path: {file_path}, has been removed.", fg="green")
+    del metadata[str(file_path)]
+    self._save_metadata(metadata)
+    click.secho(f"Metadata for document with path: {file_path}, has been removed.", fg="green")
 
   def delete_all(self):
     """Delete all documents."""
-    Constants.collection.delete(ids=self.collection.get()["ids"])
+    Constants.collection.delete(ids=Constants.collection.get()["ids"])
     self._save_metadata({})
 
   def query(self, question: str, k: int = 3) -> str:
@@ -148,13 +142,13 @@ class DocumentStore:
       context = "\n".join(results["documents"][0])
 
       # Query OpenAI
-      response = openai.ChatCompletion.create(
-                      model="gpt-3.5-turbo",
-                      messages=[
-                                      {"role": "system", "content": "You are a helpful assistant. Answer the question based on the provided context."},
-                                      {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}])
+      # response = openai.ChatCompletion.create(
+      #                 model="gpt-3.5-turbo",
+      #                 messages=[
+      #                                 {"role": "system", "content": "You are a helpful assistant. Answer the question based on the provided context."},
+      #                                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}])
 
-      return response.choices[0].message.content
+      # return response.choices[0].message.content
 
     except Exception as e:
       raise QueryProcessingError(f"Error processing query: {str(e)}")
@@ -215,7 +209,7 @@ def create_chunks(text: str, chunk_size: int) -> list[str]:
   return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
-@click.command()
+@click.command(name="load_files")
 @click.argument("file_paths", nargs=-1)
 @click.pass_context
 @timing_decorator
@@ -229,11 +223,11 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
   files_added = 0
   for file_path in file_paths:
     try:
-      click.echo(f"Loading file: {file_path}")
+      click.secho(f"Loading file: {file_path}", fg="yellow")
       # chunks = textSplitter.split_documents(
       #   load_util(file_path), chunk_size=chunk_size)
       # embeddings_wrapper(chunks, file_path, f"{uuid()}.index")
-      documentStore.add_document(Path(file_path))
+      documentStore.add_document(Path.absolute(Path(file_path)))
       files_added += 1
     except (RelativePathError, ValueError, IsADirectoryError, PermissionError, IOError, FileNotFoundError) as e:
       click.secho(e, fg="red")
@@ -241,7 +235,7 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
   click.secho(f"Files loaded: {files_added}", fg="green")
 
 
-@click.command()
+@click.command(name="show_files")
 @click.pass_context
 @timing_decorator
 def show_files(ctx: click.Context) -> None:
@@ -253,16 +247,10 @@ def show_files(ctx: click.Context) -> None:
   try:
     docs = documentStore.list_documents()
     if len(docs) > 0:
-      click.secho(f"Files loaded: \n{docs}", fg="green")
+      for itr, doc in enumerate(docs):
+        click.secho(f"{itr + 1}: {doc}", fg="green")
     else:
       click.secho("No files loaded.", fg="red")
-    # if os.path.exists(f"{parent_path}/central_ledger.txt"):
-    #   with open(f"{parent_path}/central_ledger.txt", "r") as file:
-    #     central_ledger = file.readlines()
-    #     click.secho(f"Files loaded: \n{central_ledger}", fg="green")
-    # else:
-    #   click.secho("No files loaded.", fg="red")
-    #   return None
 
   except FileNotFoundError:
     click.secho("No files loaded.", fg="red")
@@ -272,7 +260,7 @@ def show_files(ctx: click.Context) -> None:
     return None
 
 
-@click.command()
+@click.command(name="clear_context")
 @timing_decorator
 def clear_context() -> None:
   """
@@ -287,7 +275,7 @@ def clear_context() -> None:
     return None
 
 
-@click.command()
+@click.command(name="remove_file")
 @click.argument("file_path", type=str)
 @click.pass_context
 @timing_decorator
@@ -297,7 +285,7 @@ def remove_file(ctx: click.Context, file_path: str) -> None:
   """
   click.secho(f"Removing file: {file_path}", fg="yellow")
   try:
-    documentStore.delete_document(Path(file_path))
+    documentStore.delete_document(Path.absolute(Path(file_path)))
     click.secho(f"File with path: {file_path}, has been removed.", fg="yellow")
   except FileNotFoundError:
     click.secho("No files loaded.", fg="red")
