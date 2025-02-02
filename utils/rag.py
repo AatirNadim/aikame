@@ -1,11 +1,11 @@
 from sentence_transformers import SentenceTransformer
-from .constants import model_label, parent_path
+from .constants import Constants
 import faiss
 import numpy as np
 import click
 import os
 
-model = SentenceTransformer(model_label)
+embedding_model = SentenceTransformer(Constants.model_label)
 
 
 # get all the embeddings to get the context of the question

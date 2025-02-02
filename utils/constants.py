@@ -22,6 +22,6 @@ class Constants:
 	api_key = os.environ.get("llm_api_key")
 
 	local_db = chromadb.PersistentClient(path=str(parent_path / "chromadb"))
-	collection = Constants.local_db.get_or_create_collection("documents")
+	collection = local_db.get_or_create_collection("documents")
 
 	prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Always say "thanks for asking!" at the end of the answer."""
