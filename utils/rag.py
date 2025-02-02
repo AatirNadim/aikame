@@ -1,12 +1,57 @@
 
 from .constants import Constants
+from .crud_files import documentStore
+from .exceptions import NotEnoughContextError
 import faiss
 import numpy as np
 import click
 import os
+import json
 
 
-# get all the embeddings to get the context of the question
+class Chat:
+  def upsert_chat(self, query: str, response: str):
+    history = self.load_chat()
+    history.append({"query": query, "response": response})
+    history = history[-Constants.max_history_length:]
+    with open(Constants.chat_history_file, 'w') as f:
+      json.dump(history, f)
+
+  def load_chat(self) -> list[dict]:
+    if not Constants.chat_history_file.exists():
+      return []
+    with open(Constants.chat_history_file, 'r') as f:
+      return json.load(f)
+
+  def load_context(self, query: str) -> str:
+    '''Load the context from the chat history.'''
+    question_embedding = Constants.embedding_model.encode(query).tolist()
+    results = Constants.collection.query(
+                query_embeddings=[question_embedding],
+                n_results=Constants.relevant_items
+            )
+    if not results["documents"][0]:
+      raise NotEnoughContextError(
+        "I don't have enough context to answer your question.")
+
+    return "\n".join(results["documents"][0])
+
+  def handle_query(self, query: str) -> str:
+    chat_history = self.load_chat()
+    context = self.load_context(query)
+    response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": Constants.prompt_template},
+                    {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+                ]
+            )
+    self.upsert_chat(query, response)
+    return response.choices[0].message.content
+
+
+chat_instance = Chat()
+
 
 def embed_query(query: str):
   '''
@@ -51,4 +96,5 @@ def query(query: str):
   '''
           Query the model for a context.
   '''
-  get_context_for_query(query)
+  click.secho(f"Querying the model for context: {query}", fg="green")
+  click.secho(chat_instance.handle_query(query), fg="green")

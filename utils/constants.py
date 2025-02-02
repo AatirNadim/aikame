@@ -18,6 +18,9 @@ class Constants:
     "parent_path", Path.home() / ".aikame-dump")
   docs_dir: Path = parent_path / "documents"
   metadata_file = parent_path / "metadata.json"
+  chat_history_file = parent_path / "chat_history.json"
+  max_history_length = os.environ.get("max_history_length", 5)
+  relevant_items = os.environ.get("relevant_items", 3)
   chunk_size = os.environ.get("chunk_size", 256)
   overlap = os.environ.get("overlap", 50)
   model_label = os.environ.get("model_label", 'all-MiniLM-L6-v2')
