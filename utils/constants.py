@@ -24,7 +24,7 @@ class Constants:
   chunk_size = os.environ.get("chunk_size", 256)
   overlap = os.environ.get("overlap", 50)
   model_label = os.environ.get("model_label", 'all-MiniLM-L6-v2')
-  llm_model = os.environ.get("llm_model", "gpt-4")
+  llm_model = os.environ.get("llm_model", "gpt-3.5-turbo")
   api_key = os.environ.get("llm_api_key")
   if(api_key is None):
     raise ValueError("API key for LLM not found.")
@@ -34,4 +34,4 @@ class Constants:
   local_db = chromadb.PersistentClient(path=str(parent_path / "chromadb"))
   collection = local_db.get_or_create_collection("documents")
 
-  prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Always say "thanks for asking!" at the end of the answer."""
+  prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""

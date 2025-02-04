@@ -7,50 +7,66 @@ import numpy as np
 import click
 import os
 import json
+from openai import OpenAI
 
 
 class Chat:
   def upsert_chat(self, query: str, response: str):
-    history = self.load_chat()
-    history.append({"query": query, "response": response})
-    history = history[-Constants.max_history_length:]
-    with open(Constants.chat_history_file, 'w') as f:
-      json.dump(history, f)
+    try:
+      history = self.load_chat()
+      history.append({"query": query, "response": response})
+      history = history[-Constants.max_history_length:]
+      with open(Constants.chat_history_file, 'w') as f:
+        json.dump(history, f)
+    except Exception as e:
+      raise e
 
-  def load_chat(self) -> list[dict]:
-    if not Constants.chat_history_file.exists():
-      return []
-    with open(Constants.chat_history_file, 'r') as f:
-      return json.load(f)
+  def load_chat(self) -> str:
+    try:
+      if not Constants.chat_history_file.exists():
+        return json.loads("[]")
+      with open(Constants.chat_history_file, 'r') as f:
+        return json.load(f)
+    except Exception as e:
+      raise e
 
   def load_context(self, query: str) -> str:
-    '''Load the context from the chat history.'''
-    question_embedding = Constants.embedding_model.encode(query).tolist()
-    results = Constants.collection.query(
-                query_embeddings=[question_embedding],
-                n_results=Constants.relevant_items
-            )
-    if not results["documents"][0]:
-      raise NotEnoughContextError(
-        "I don't have enough context to answer your question.")
+    try:
+      '''Load the context from the chat history.'''
+      click.secho(f"Loading context for query", fg="yellow")
+      question_embedding = Constants.embedding_model.encode(query).tolist()
+      results = Constants.collection.query(
+                                                      query_embeddings=[
+                                                        question_embedding],
+                                                      n_results=Constants.relevant_items
+                                      )
+      if not results["documents"][0]:
+        raise NotEnoughContextError(
+                "I don't have enough context to answer your question.")
 
-    return "\n".join(results["documents"][0])
+      return "\n".join(results["documents"][0])
+    except Exception as e:
+      raise e
 
   def handle_query(self, query: str) -> str:
-    chat_history = self.load_chat()
-    context = self.load_context(query)
-    response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": Constants.prompt_template},
-                    {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-                ]
-            )
-    self.upsert_chat(query, response)
-    return response.choices[0].message.content
+    try:
+      chat_history = self.load_chat()
+      click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
+      context = self.load_context(query)
+      click.secho("Relevant context has been loaded succesfully")
+      response = ai_client.chat.completions.create(
+        model=Constants.llm_model,
+        messages=[{"role": "system", "content": Constants.prompt_template},{"role": "user", "content": f"Chat history:\n{chat_history}\nContext:\n{context}\n\nQuestion: {query}\n"}])
+      self.upsert_chat(query, response)
+      return response.choices[0].message.content
+    except Exception as e:
+      raise e
 
 
 chat_instance = Chat()
+ai_client = OpenAI(
+  api_key=Constants.api_key
+)
 
 
 def embed_query(query: str):
