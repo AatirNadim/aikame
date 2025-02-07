@@ -14,6 +14,8 @@ from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.text import TextLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
+import tkinter as tk
+from tkinter import filedialog
 
 
 text_suffix = ".txt"
@@ -215,6 +217,21 @@ def create_chunks(text: str, chunk_size: int) -> list[str]:
   return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
+def file_selector() -> list[Path]:
+  root = tk.Tk()
+  root.withdraw()  # Hide the main window
+
+  # Open a file dialog that allows multiple file selection
+  file_paths = filedialog.askopenfilenames(
+        title="Select Files",
+        filetypes=[("All Files", "*.*"), ("Text files",
+                    "*.txt"), ("PDF files", "*.pdf")],
+    )
+
+  # Convert the tuple of file paths to a list (if needed)
+  return file_paths
+
+
 @click.command(name="load_files")
 @click.argument("file_paths", nargs=-1)
 @click.pass_context
@@ -228,16 +245,19 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
   click.secho(f"Loading all files for context ...", bg="green")
   files_added = 0
   if len(file_paths) == 0:
-    click.secho("No files provided.", fg="red")
+    file_paths = file_selector()
+    click.secho(f"Files selected: {file_paths}", fg="yellow")
   file_path_objs = [Path.absolute(Path(file_path))
                                     for file_path in file_paths]
+
+  click.secho(f"Files objs: {file_path_objs}", fg="yellow")
 
   for file_path_obj in file_path_objs:
     if file_path_obj.suffix.lower() not in acceptable_file_types:
       raise ValueError(
         f"Unsupported file type: {file_path_obj.suffix.lower()}, no files loaded.")
 
-  for file_path_objs in file_path_objs:
+  for file_path_obj in file_path_objs:
     try:
       click.secho(f"Loading file: {file_path_obj.name}", fg="yellow")
       # chunks = textSplitter.split_documents(
