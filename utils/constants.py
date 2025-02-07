@@ -26,6 +26,7 @@ class Constants:
   model_label = os.environ.get("model_label", 'all-MiniLM-L6-v2')
   llm_model = os.environ.get("llm_model", "gpt-3.5-turbo")
   api_key = os.environ.get("llm_api_key")
+  gemini_api_key = os.environ.get("gemini_api_key")
   if(api_key is None):
     raise ValueError("API key for LLM not found.")
 

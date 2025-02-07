@@ -2,6 +2,7 @@
 from .constants import Constants
 from .crud_files import documentStore
 from .exceptions import NotEnoughContextError
+from .llm_integrations.gemini import GeminiPlugin
 import faiss
 import numpy as np
 import click
@@ -10,21 +11,34 @@ import json
 from openai import OpenAI
 
 
+# Format of the chat history:
+# [
+#   {
+#     role: <"user" | "system" | "assistant">,
+#     content: <str>
+# 	}
+# ]
+
 class Chat:
+
+  def __init__(self):
+    self.geminiPlugin = GeminiPlugin()
+
   def upsert_chat(self, query: str, response: str):
     try:
       history = self.load_chat()
-      history.append({"query": query, "response": response})
+      history.append({"role": "user", "content": query})
+      history.append({"role": "assistant", "content": response})
       history = history[-Constants.max_history_length:]
       with open(Constants.chat_history_file, 'w') as f:
         json.dump(history, f)
     except Exception as e:
       raise e
 
-  def load_chat(self) -> str:
+  def load_chat(self) -> list[str]:
     try:
       if not Constants.chat_history_file.exists():
-        return json.loads("[]")
+        return []
       with open(Constants.chat_history_file, 'r') as f:
         return json.load(f)
     except Exception as e:
@@ -54,11 +68,14 @@ class Chat:
       click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
       context = self.load_context(query)
       click.secho("Relevant context has been loaded succesfully")
-      response = ai_client.chat.completions.create(
-        model=Constants.llm_model,
-        messages=[{"role": "system", "content": Constants.prompt_template},{"role": "user", "content": f"Chat history:\n{chat_history}\nContext:\n{context}\n\nQuestion: {query}\n"}])
+      # response = ai_client.chat.completions.create(
+      #   model=Constants.llm_model,
+      #   messages=[{"role": "system", "content": Constants.prompt_template},{"role": "user", "content": f"Chat history:\n{chat_history}\nContext:\n{context}\n\nQuestion: {query}\n"}])
+      response = self.geminiPlugin.invoke(
+        query=query, chat_history=chat_history, context=context)
+      click.secho("recied response from llm", fg="green")
       self.upsert_chat(query, response)
-      return response.choices[0].message.content
+      return response
     except Exception as e:
       raise e
 

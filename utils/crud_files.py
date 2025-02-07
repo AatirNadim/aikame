@@ -16,7 +16,10 @@ from langchain_community.document_loaders.text import TextLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
 
 
-acceptable_file_types = [".txt", ".pdf"]
+text_suffix = ".txt"
+pdf_suffix = ".pdf"
+
+acceptable_file_types = [text_suffix, pdf_suffix]
 
 
 class DocumentStore:
@@ -49,7 +52,7 @@ class DocumentStore:
     """Process a document and return chunks."""
     if file_path.suffix.lower() not in acceptable_file_types:
       raise ValueError(f"Unsupported file type: {file_path.suffix.lower()}")
-    if file_path.suffix.lower() == '.pdf':
+    if file_path.suffix.lower() == pdf_suffix:
       loader = PyPDFLoader(str(file_path))
     else:
       loader = TextLoader(str(file_path))
@@ -71,7 +74,8 @@ class DocumentStore:
       # Generate embeddings and add to ChromaDB
       texts = [chunk.page_content for chunk in chunks]
       embeddings = self.embedding_model.encode(texts).tolist()
-      click.secho(f"Embeddings generated for {len(chunks)} chunks.", fg="green")
+      click.secho(
+        f"Embeddings generated for {len(chunks)} chunks.", fg="green")
 
       # Generate IDs for chunks
       doc_id = str(file_path.stem)
@@ -112,11 +116,13 @@ class DocumentStore:
       raise FileNotFoundError(f"Document with path: {file_path}, not found.")
     for chunk_id in metadata[str(file_path)]["ids"]:
       Constants.collection.delete(ids=[chunk_id])
-    click.secho(f"Document with path: {file_path}, has been removed.", fg="green")
+    click.secho(
+      f"Document with path: {file_path}, has been removed.", fg="green")
 
     del metadata[str(file_path)]
     self._save_metadata(metadata)
-    click.secho(f"Metadata for document with path: {file_path}, has been removed.", fg="green")
+    click.secho(
+      f"Metadata for document with path: {file_path}, has been removed.", fg="green")
 
   def delete_all(self):
     """Delete all documents."""
@@ -221,13 +227,23 @@ def load_files(ctx: click.Context, file_paths: tuple[str, ...]) -> list:
 
   click.secho(f"Loading all files for context ...", bg="green")
   files_added = 0
-  for file_path in file_paths:
+  if len(file_paths) == 0:
+    click.secho("No files provided.", fg="red")
+  file_path_objs = [Path.absolute(Path(file_path))
+                                    for file_path in file_paths]
+
+  for file_path_obj in file_path_objs:
+    if file_path_obj.suffix.lower() not in acceptable_file_types:
+      raise ValueError(
+        f"Unsupported file type: {file_path_obj.suffix.lower()}, no files loaded.")
+
+  for file_path_objs in file_path_objs:
     try:
-      click.secho(f"Loading file: {file_path}", fg="yellow")
+      click.secho(f"Loading file: {file_path_obj.name}", fg="yellow")
       # chunks = textSplitter.split_documents(
       #   load_util(file_path), chunk_size=chunk_size)
       # embeddings_wrapper(chunks, file_path, f"{uuid()}.index")
-      documentStore.add_document(Path.absolute(Path(file_path)))
+      documentStore.add_document(file_path_obj)
       files_added += 1
     except (RelativePathError, ValueError, IsADirectoryError, PermissionError, IOError, FileNotFoundError) as e:
       click.secho(e, fg="red")
