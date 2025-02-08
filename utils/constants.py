@@ -2,10 +2,11 @@ import os
 import chromadb
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 
 '''
-	Constants for the project.
-	They can be set as environment variables.
+        Constants for the project.
+        They can be set as environment variables.
 '''
 
 
@@ -14,6 +15,9 @@ class Constants:
   Constants for the project.
   They can be set as environment variables.
   """
+
+  # give path to the env file if required
+  load_dotenv()
   parent_path: Path = os.environ.get(
     "parent_path", Path.home() / ".aikame-dump")
   docs_dir: Path = parent_path / "documents"
@@ -27,8 +31,6 @@ class Constants:
   llm_model = os.environ.get("llm_model", "gpt-3.5-turbo")
   api_key = os.environ.get("llm_api_key")
   gemini_api_key = os.environ.get("gemini_api_key")
-  if(api_key is None):
-    raise ValueError("API key for LLM not found.")
 
   embedding_model = SentenceTransformer(model_label)
 

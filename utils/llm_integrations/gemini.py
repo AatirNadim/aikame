@@ -32,8 +32,8 @@ class GeminiPlugin:
       if Constants.gemini_api_key is None:
         raise ValueError("Gemini API key is not set")
       if self.chat_session is None:
-        click.secho(
-          "No previos chat session, starting new session..", fg="yellow")
+        # click.secho(
+        #   "No previous chat session, starting new session..", fg="yellow")
         self.start_chat(chat_history)
       message = ""
 
