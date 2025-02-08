@@ -15,6 +15,15 @@ class Constants:
   Constants for the project.
   They can be set as environment variables.
   """
+  class EntityRole:
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+
+  class MessageInstance:
+    def __init__(self, role: "Constants.EntityRole", content: str):
+      self.role = role
+      self.content = content
 
   # give path to the env file if required
   load_dotenv()
@@ -28,9 +37,16 @@ class Constants:
   chunk_size = os.environ.get("chunk_size", 256)
   overlap = os.environ.get("overlap", 50)
   model_label = os.environ.get("model_label", 'all-MiniLM-L6-v2')
-  llm_model = os.environ.get("llm_model", "gpt-3.5-turbo")
-  api_key = os.environ.get("llm_api_key")
+
+  # models
+  gpt_model = os.environ.get("llm_model", "gpt-3.5-turbo")
+  gemini_model = os.environ.get("gemini_model", "gemini-2.0-flash")
+  anthropic_model = os.environ.get("anthropic_model", "claude-v1")
+
+  # api keys
+  gpt_api_key = os.environ.get("llm_api_key")
   gemini_api_key = os.environ.get("gemini_api_key")
+  anthropic_api_key = os.environ.get("anthropic_api_key")
 
   embedding_model = SentenceTransformer(model_label)
 

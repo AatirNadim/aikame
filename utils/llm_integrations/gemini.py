@@ -14,7 +14,7 @@ class GeminiPlugin:
     os.environ["GRPC_VERBOSITY"] = "ERROR"
     os.environ["GLOG_minloglevel"] = "2"
 
-  def start_chat(self, chat_history: list[dict] = None):
+  def start_chat(self, chat_history: list[Constants.MessageInstance] = None):
     if chat_history is None:
       chat_history = []
 
@@ -27,7 +27,7 @@ class GeminiPlugin:
 
     self.chat_session = self.model.start_chat(history=history)
 
-  def invoke(self, query: str, chat_history: list[str], context: str) -> generation_types.GenerateContentResponse:
+  def invoke(self, query: str, chat_history: list[Constants.MessageInstance], context: str) -> generation_types.GenerateContentResponse:
     try:
       if Constants.gemini_api_key is None:
         raise ValueError("Gemini API key is not set")

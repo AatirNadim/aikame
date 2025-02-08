@@ -27,8 +27,9 @@ class Chat:
   def upsert_chat(self, query: str, response: str):
     try:
       history = self.load_chat()
-      history.append({"role": "user", "content": query})
-      history.append({"role": "assistant", "content": response})
+      history.append(Constants.MessageInstance(role=Constants.EntityRole.user, content=query))
+      history.append(Constants.MessageInstance(
+        role=Constants.EntityRole.assistant, content=response))
       history = history[-Constants.max_history_length:]
       with open(Constants.chat_history_file, 'w') as f:
         json.dump(history, f)

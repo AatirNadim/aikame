@@ -22,7 +22,8 @@ dependencies = [
 	"google-generativeai (>=0.8.4,<0.9.0)",
 	"tk (>=0.1.0,<0.2.0)",
 	"grpcio (>=1.70.0,<2.0.0)",
-	"python-dotenv (>=1.0.1,<2.0.0)"
+	"python-dotenv (>=1.0.1,<2.0.0)",
+	"anthropic (>=0.45.2,<0.46.0)"
 ]
 
 [tool.autopep8]
