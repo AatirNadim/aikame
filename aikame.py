@@ -18,8 +18,8 @@ def cli(ctx: click.Context) -> None :
 
   Aikame is a robust RAG application brought to you as a cli tool.
   """
-
-  click.secho("Welcome to Aikame!", fg='green')
+  pass
+  # click.secho("Welcome to Aikame!", fg='green')
 
 
 @cli.command()

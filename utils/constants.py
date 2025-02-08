@@ -19,7 +19,7 @@ class Constants:
   docs_dir: Path = parent_path / "documents"
   metadata_file = parent_path / "metadata.json"
   chat_history_file = parent_path / "chat_history.json"
-  max_history_length = os.environ.get("max_history_length", 5)
+  max_history_length = os.environ.get("max_history_length", 7)
   relevant_items = os.environ.get("relevant_items", 3)
   chunk_size = os.environ.get("chunk_size", 256)
   overlap = os.environ.get("overlap", 50)
@@ -35,4 +35,4 @@ class Constants:
   local_db = chromadb.PersistentClient(path=str(parent_path / "chromadb"))
   collection = local_db.get_or_create_collection("documents")
 
-  prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""
+  prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Please note that the response you give will be output as cli command response, so use the appropriate text format. Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""

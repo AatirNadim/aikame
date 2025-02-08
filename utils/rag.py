@@ -62,7 +62,7 @@ class Chat:
     except Exception as e:
       raise e
 
-  def handle_query(self, query: str) -> str:
+  def handle_query(self, query: str) -> None:
     try:
       chat_history = self.load_chat()
       click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
@@ -73,9 +73,9 @@ class Chat:
       #   messages=[{"role": "system", "content": Constants.prompt_template},{"role": "user", "content": f"Chat history:\n{chat_history}\nContext:\n{context}\n\nQuestion: {query}\n"}])
       response = self.geminiPlugin.invoke(
         query=query, chat_history=chat_history, context=context)
-      click.secho("recied response from llm", fg="green")
+
       self.upsert_chat(query, response)
-      return response
+      # return response
     except Exception as e:
       raise e
 
@@ -130,4 +130,5 @@ def query(query: str):
           Query the model for a context.
   '''
   click.secho(f"Querying the model for context: {query}", fg="green")
-  click.secho(chat_instance.handle_query(query), fg="green")
+  chat_instance.handle_query(query)
+  # click.secho(chat_instance.handle_query(query), fg="green")
