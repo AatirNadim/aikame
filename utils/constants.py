@@ -1,4 +1,5 @@
 import os
+import json
 import chromadb
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
@@ -24,6 +25,22 @@ class Constants:
     def __init__(self, role: "Constants.EntityRole", content: str):
       self.role = role
       self.content = content
+    
+    def toJSON(self) -> str:
+      return json.dumps(
+        self, default=lambda o: o.__dict__,
+        sort_keys=True, indent=4
+      )
+
+    @staticmethod
+    def object_hook(dct):
+      return Constants.MessageInstance(
+        role=dct['role'], content=dct['content']
+      )
+
+    @staticmethod
+    def fromJSON(json_str: str):
+      return json.loads(json_str, object_hook=Constants.MessageInstance.object_hook)
 
   # give path to the env file if required
   load_dotenv()

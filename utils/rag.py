@@ -27,21 +27,26 @@ class Chat:
   def upsert_chat(self, query: str, response: str):
     try:
       history = self.load_chat()
-      history.append(Constants.MessageInstance(role=Constants.EntityRole.user, content=query))
+      history.append(Constants.MessageInstance(
+        role=Constants.EntityRole.user, content=query))
       history.append(Constants.MessageInstance(
         role=Constants.EntityRole.assistant, content=response))
       history = history[-Constants.max_history_length:]
+      history = [itr.toJSON() for itr in history]
       with open(Constants.chat_history_file, 'w') as f:
         json.dump(history, f)
     except Exception as e:
       raise e
 
-  def load_chat(self) -> list[str]:
+  def load_chat(self) -> list[Constants.MessageInstance]:
     try:
       if not Constants.chat_history_file.exists():
         return []
       with open(Constants.chat_history_file, 'r') as f:
-        return json.load(f)
+        history = json.load(f, cls=json.JSONDecoder)
+        for itr in history:
+          print(itr)
+        return []
     except Exception as e:
       raise e
 
@@ -63,10 +68,22 @@ class Chat:
     except Exception as e:
       raise e
 
+  def handle_dedicated_chat(self):
+    '''
+		Handle a dedicated chat.
+		'''
+    click.secho("Starting a dedicated chat\nPlease type exit to end the dedicated chat", fg="yellow")
+    click.echo("Agent:\nHello! How can I help you today?")
+    while True:
+      query = input("User: ")
+      if query == "exit":
+        break
+      self.handle_query(query)
+
   def handle_query(self, query: str) -> None:
     try:
       chat_history = self.load_chat()
-      click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
+      # click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
       context = self.load_context(query)
       click.secho("Relevant context has been loaded succesfully")
       # response = ai_client.chat.completions.create(
@@ -82,9 +99,9 @@ class Chat:
 
 
 chat_instance = Chat()
-ai_client = OpenAI(
-  api_key=Constants.api_key
-)
+# ai_client = OpenAI(
+#   api_key=Constants.api_key
+# )
 
 
 def embed_query(query: str):
@@ -124,12 +141,15 @@ def get_context_for_query(query: str):
     raise e
 
 
-@click.command()
-@click.argument("query", type=str)
+@click.command(name="ask")
+# @click.argument("query", type=str, cls=)
+@click.option("--query", "-q", type=str, help="Query for the model")
 def query(query: str):
   '''
-          Query the model for a context.
+    Query the model for a context.
   '''
+  if query == "":
+    chat_instance.handle_dedicated_chat()
   click.secho(f"Querying the model for context: {query}", fg="green")
   chat_instance.handle_query(query)
   # click.secho(chat_instance.handle_query(query), fg="green")
