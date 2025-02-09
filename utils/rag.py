@@ -1,6 +1,5 @@
 
 from .constants import Constants
-from .crud_files import documentStore
 from .exceptions import NotEnoughContextError
 from .llm_integrations.gemini import GeminiPlugin
 import faiss
@@ -39,13 +38,22 @@ class Chat:
     except Exception as e:
       raise e
 
-  def load_chat(self) -> list[Constants.MessageInstance]:
+  @staticmethod
+  def load_chat() -> list[Constants.MessageInstance]:
     try:
       if not Constants.chat_history_file.exists():
         return []
       with open(Constants.chat_history_file, 'r') as f:
         history = json.load(f)
         return [Constants.MessageInstance.fromDict(itr) for itr in history]
+    except Exception as e:
+      raise e
+    
+  @staticmethod
+  def clear_chat():
+    try:
+      with open(Constants.chat_history_file, 'w') as f:
+        json.dump([], f)
     except Exception as e:
       raise e
 
@@ -71,12 +79,14 @@ class Chat:
     '''
 		Handle a dedicated chat.
 		'''
-    click.secho("Starting a dedicated chat\nPlease type exit to end the dedicated chat", fg="yellow")
+    click.secho("Starting a dedicated chat\nPlease type `exit` to end the dedicated chat", fg="yellow")
     click.echo("Agent:\nHello! How can I help you today?")
     while True:
-      query = input("User: ")
+      click.secho("User: ", fg="yellow")
+      query = input()
       if query == "exit":
         break
+      click.secho("Agent: ", fg="green")
       self.handle_query(query)
 
   def handle_query(self, query: str) -> None:
@@ -84,7 +94,7 @@ class Chat:
       chat_history = self.load_chat()
       # click.secho(f"\n\nChat history: {chat_history}\n\n", fg="yellow")
       context = self.load_context(query)
-      click.secho("Relevant context has been loaded succesfully")
+      # click.secho("Relevant context has been loaded succesfully")
       # response = ai_client.chat.completions.create(
       #   model=Constants.llm_model,
       #   messages=[{"role": "system", "content": Constants.prompt_template},{"role": "user", "content": f"Chat history:\n{chat_history}\nContext:\n{context}\n\nQuestion: {query}\n"}])
@@ -142,13 +152,13 @@ def get_context_for_query(query: str):
 
 @click.command(name="ask")
 # @click.argument("query", type=str, cls=)
-@click.option("--query", "-q", type=str, help="Query for the model")
+@click.option("--query", "-q", type=str, help="Query for the model", default=Constants.no_inline_query)
 def query(query: str):
   '''
     Query the model for a context.
   '''
-  if query == "":
+  if query == Constants.no_inline_query:
     chat_instance.handle_dedicated_chat()
+    return
   click.secho(f"Querying the model for context: {query}", fg="green")
   chat_instance.handle_query(query)
-  # click.secho(chat_instance.handle_query(query), fg="green")

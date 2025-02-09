@@ -6,6 +6,7 @@ from datetime import datetime
 from .embeddings import embeddings_wrapper
 from .index import timing_decorator, get_embeddings_path_from_key
 from .constants import Constants
+from .rag import Chat
 from .exceptions import *
 import shutil
 import fileinput
@@ -130,6 +131,7 @@ class DocumentStore:
     """Delete all documents."""
     Constants.collection.delete(ids=Constants.collection.get()["ids"])
     self._save_metadata({})
+    Chat.clear_chat()
 
   def query(self, question: str, k: int = 3) -> str:
     """Query the system."""

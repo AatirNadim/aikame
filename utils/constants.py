@@ -68,6 +68,8 @@ class Constants:
   embedding_model = SentenceTransformer(model_label)
 
   local_db = chromadb.PersistentClient(path=str(parent_path / "chromadb"))
-  collection = local_db.get_or_create_collection("documents")
+  collection = local_db.get_or_create_collection("documents-testing")
 
   prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Please note that the response you give will be output as cli command response, so use the appropriate text format. Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""
+
+  no_inline_query = "no_inline_query"
