@@ -70,6 +70,12 @@ class Constants:
   local_db = chromadb.PersistentClient(path=str(parent_path / "chromadb"))
   collection = local_db.get_or_create_collection("documents-testing")
 
-  prompt_template = """Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as relevant as possible and explain all the important points coherently. Please note that the response you give will be output as cli command response, so use the appropriate text format. Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""
+  prompt_template = """Dont give the response in markdown format.
+  Use the added context to answer all the questions given to you. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+  You can consult your training data if explicitly mentioned in the user prompt. 
+  Keep the answer as relevant as possible and explain all the important points coherently. Please note that the response you give will be output as cli command response, so use the text format appropriate for user-friendly console print and not the markdown format. 
+  Always say "thanks for asking!" at the end of the answer and ask the user for a possible follow-up."""
 
   no_inline_query = "no_inline_query"
+
+  random_id = "dbf8f69d-60ba-4e37-8a2d-17ca14371d36"

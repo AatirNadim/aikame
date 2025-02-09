@@ -2,7 +2,7 @@ from utils.index import call_func, hello
 import click
 import os
 from utils.crud_files import load_files, show_files, clear_context, remove_file
-from utils.rag import query
+from utils.rag import query, export_chat
 
 
 @click.group()
@@ -46,6 +46,7 @@ cli.add_command(remove_file)
 cli.add_command(set_value)
 cli.add_command(get_value)
 cli.add_command(query)
+cli.add_command(export_chat)
 
 
 if __name__ == "__main__":

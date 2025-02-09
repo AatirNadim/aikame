@@ -9,10 +9,16 @@ class GeminiPlugin:
   def __init__(self):
     genai.configure(api_key=Constants.gemini_api_key)
     self.model = genai.GenerativeModel(
-      'gemini-2.0-flash', system_instruction=Constants.prompt_template)
+      'gemini-2.0-flash', system_instruction=Constants.prompt_template,
+        generation_config={
+          "response_mime_type": "text/plain",
+          "temperature": 0.9,
+          "max_output_tokens": 1024,
+        }
+      )
     self.chat_session = None
-    os.environ["GRPC_VERBOSITY"] = "ERROR"
-    os.environ["GLOG_minloglevel"] = "2"
+    os.environ["GRPC_VERBOSITY"] = "FATAL"
+    os.environ["GLOG_minloglevel"] = "3"
 
   def start_chat(self, chat_history: list[Constants.MessageInstance] = None):
     if chat_history is None:

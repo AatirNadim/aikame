@@ -7,7 +7,10 @@ import numpy as np
 import click
 import os
 import json
+from pathlib import Path
 from openai import OpenAI
+import tkinter as tk
+from tkinter import filedialog
 
 
 # Format of the chat history:
@@ -148,7 +151,23 @@ def get_context_for_query(query: str):
         get_context_util(query, os.path.join(Constants.parent_path, file_path))
   except Exception as e:
     raise e
+  
 
+  
+# returns the dir path including the file name
+
+def select_save_location() -> str:
+  root = tk.Tk()
+  root.withdraw()
+  
+  file_path = filedialog.asksaveasfilename(
+      title="Select Location to Save Chat History",
+      defaultextension=".json",
+      initialfile="chat_history.json",
+      filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+  )
+  print("the path from the window is ", file_path)
+  return file_path
 
 @click.command(name="ask")
 # @click.argument("query", type=str, cls=)
@@ -162,3 +181,27 @@ def query(query: str):
     return
   click.secho(f"Querying the model for context: {query}", fg="green")
   chat_instance.handle_query(query)
+
+
+@click.command(name="export_chat")
+@click.option("--file_path", "-f", type=str, help="File path to export the chat history", default = Constants.random_id)
+def export_chat(file_path: str):
+  '''
+    Export the chat history to a location of your choosing.
+
+    Args:
+    file_path: str: The file path to export the chat history eg(./example.json). 
+                    Note: The file path should have a .json extension.
+    (Optional) In case the file path is not provided, the user will be prompted to select a location to save the chat history.
+
+  '''
+  try:
+    if file_path == Constants.random_id:
+      file_path = select_save_location()
+    chat_history = chat_instance.load_chat()
+    if not os.path.exists(os.path.dirname(file_path)):
+      os.makedirs(os.path.dirname(file_path))
+    with open(Path.absolute(Path(file_path)), 'w') as f:
+      json.dump([itr.toDict() for itr in chat_history], f)
+  except Exception as e:
+    raise e
