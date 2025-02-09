@@ -21,8 +21,8 @@ class GeminiPlugin:
     history = []
     for message in chat_history:
       history.append({
-          "role": message["role"],
-          "parts": [{"text": message["content"]}]
+          "role": message.role,
+          "parts": [{"text": message.content}]
       })
 
     self.chat_session = self.model.start_chat(history=history)

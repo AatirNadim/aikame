@@ -32,7 +32,8 @@ class Chat:
       history.append(Constants.MessageInstance(
         role=Constants.EntityRole.assistant, content=response))
       history = history[-Constants.max_history_length:]
-      history = [itr.toJSON() for itr in history]
+      history = [itr.toDict() for itr in history]
+
       with open(Constants.chat_history_file, 'w') as f:
         json.dump(history, f)
     except Exception as e:
@@ -43,10 +44,8 @@ class Chat:
       if not Constants.chat_history_file.exists():
         return []
       with open(Constants.chat_history_file, 'r') as f:
-        history = json.load(f, cls=json.JSONDecoder)
-        for itr in history:
-          print(itr)
-        return []
+        history = json.load(f)
+        return [Constants.MessageInstance.fromDict(itr) for itr in history]
     except Exception as e:
       raise e
 
